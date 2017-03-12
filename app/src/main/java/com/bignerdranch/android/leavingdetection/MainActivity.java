@@ -3,7 +3,6 @@ package com.bignerdranch.android.leavingdetection;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -14,8 +13,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.idescout.sql.SqlScoutServer;
-
-import org.litepal.tablemanager.Connector;
 
 import java.util.Locale;
 
@@ -36,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         mTextView.setVisibility(View.VISIBLE);
         mIndicator = (Button) findViewById(R.id.detection_indicator);
         mIndicator.setVisibility(View.INVISIBLE);
-        SQLiteDatabase db = Connector.getDatabase();
+
     }
 
     public void clickBtn(View view) {

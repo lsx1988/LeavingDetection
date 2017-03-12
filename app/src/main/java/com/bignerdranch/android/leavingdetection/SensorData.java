@@ -1,10 +1,15 @@
 package com.bignerdranch.android.leavingdetection;
 
+import org.litepal.crud.DataSupport;
+
 /**
  * Created by shixunliu on 13/3/17.
  */
 
-public class SensorData {
+public class SensorData extends DataSupport{
+
+
+    private int id;
 
     private Double homeWifiLevel;
 
@@ -54,5 +59,13 @@ public class SensorData {
 
     public void setIsHomeWifi(Double isHomeWifi) {
         this.isHomeWifi = isHomeWifi;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }
