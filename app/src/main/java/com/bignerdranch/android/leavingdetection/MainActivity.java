@@ -3,6 +3,7 @@ package com.bignerdranch.android.leavingdetection;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -11,6 +12,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import com.idescout.sql.SqlScoutServer;
+
+import org.litepal.tablemanager.Connector;
+
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -21,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
+        SqlScoutServer.create(this, getPackageName());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mWifi = Wifi.get(this);
@@ -29,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
         mTextView.setVisibility(View.VISIBLE);
         mIndicator = (Button) findViewById(R.id.detection_indicator);
         mIndicator.setVisibility(View.INVISIBLE);
+        SQLiteDatabase db = Connector.getDatabase();
     }
 
     public void clickBtn(View view) {
@@ -53,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case 0:
-                    mTextView.setText(Double.toString(msg.getData().getDouble("wifiLevel")));
+                    mTextView.setText(String.format(Locale.US,"%f",msg.getData().getDouble("wifiLevel")));
                     mTextView.setVisibility(View.VISIBLE);
                     mIndicator.setVisibility(View.INVISIBLE);
                     break;
@@ -62,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
                     mIndicator.setVisibility(View.VISIBLE);
                     unbindService(mServiceConnection);
                 default:
-                    mTextView.setText("No wifi");
+                    mTextView.setText(R.string.Wifi_disconnect);
                     break;
             }
         }

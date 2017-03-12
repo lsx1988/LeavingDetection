@@ -3,4 +3,5 @@
     <string name="start_detection">START</string>
     <string name="leaving_detected">Leaving Detected</string>
     <string name="wifi_level">Here is wifi level</string>
+    <string name="Wifi_disconnect">No Wifi</string>
 </resources>
