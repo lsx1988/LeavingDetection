@@ -35,8 +35,6 @@ public class MyService extends Service {
     private ScanWifi mBinder = new ScanWifi();
     private double homeWifilevel = 0;
     private int queueSize = 3;
-    private double min_mean = 0, num_mean = 0, mean_mean = 0, std_mean = 0, is_wifi_mean = 0,
-            min_diff = 0, num_diff = 0, mean_diff = 0, std_diff = 0;
     private BufferedReader model = null;
     private svm_predict predict = null;
     private double isHomeWifi = 1.0;
@@ -48,6 +46,7 @@ public class MyService extends Service {
 
     class ScanWifi extends Binder {
         public void startScanning(android.os.Handler handler, Wifi wifi) {
+
             mHandler = handler;
             mWifi = wifi;
             wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
@@ -57,8 +56,8 @@ public class MyService extends Service {
             mTimerTask = new TimerTask() {
                 @Override
                 public void run() {
-                    wifiInfo = wifiManager.getConnectionInfo();
 
+                    wifiInfo = wifiManager.getConnectionInfo();
                     homeWifilevel = wifiInfo.getRssi();
 
                     if (Math.abs(homeWifilevel) >=95) {
@@ -77,12 +76,12 @@ public class MyService extends Service {
 
                     numOfWifi = scanResults.size();
                     meanOfAllWifi = allWifiLevel / numOfWifi;
+                    Log.d(TAG, Double.toString(meanOfAllWifi));
 
                     for (int i = 0; i < scanResults.size(); i++) {
                         stdOfAllWifi += Math.pow((double)scanResults.get(i).level - meanOfAllWifi,2);
                     }
                     stdOfAllWifi = Math.sqrt(stdOfAllWifi / numOfWifi);
-
 
                     SensorData sample = new SensorData();
                     sample.setHomeWifiLevel(homeWifilevel);
@@ -97,60 +96,16 @@ public class MyService extends Service {
 
                     if (DataSupport.count(SensorData.class) == queueSize) {
 
-                        min_mean = 0;
-                        num_mean = 0;
-                        mean_mean = 0;
-                        std_mean = 0;
-                        is_wifi_mean = 0;
-                        min_diff = 0;
-                        num_diff = 0;
-                        mean_diff = 0;
-                        std_diff = 0;
+                        str = 0 + " 1:" + getMean("homeWifiLevel")
+                                + " 2:" + getMean("numOfWifi")
+                                + " 3:" + getMean("meanOfAllWifiLevel")
+                                + " 4:" + getMean("stdOfAllWifiLevel")
+                                + " 5:" + getMean("isHomeWifi")
+                                + " 6:" + getSumVar("homeWifiLevel")
+                                + " 7:" + getSumVar("numOfWifi")
+                                + " 8:" + getSumVar("meanOfAllWifiLevel")
+                                + " 9:" + getSumVar("stdOfAllWifiLevel");
 
-                        min_mean = DataSupport.average(SensorData.class, "homeWifiLevel");
-                        num_mean = DataSupport.average(SensorData.class, "numOfWifi");
-                        mean_mean = DataSupport.average(SensorData.class, "meanOfAllWifiLevel");
-                        std_mean = DataSupport.average(SensorData.class, "stdOfAllWifiLevel");
-                        is_wifi_mean = DataSupport.average(SensorData.class, "isHomeWifi");
-
-                        min_mean = min_mean / Math.pow(10, (int) (Math.log10(Math.abs(min_mean)) + 1));
-                        num_mean = num_mean / Math.pow(10, (int) (Math.log10(Math.abs(num_mean)) + 1));
-                        mean_mean = mean_mean / Math.pow(10, (int) (Math.log10(Math.abs(mean_mean)) + 1));
-                        std_mean = std_mean / Math.pow(10, (int) (Math.log10(Math.abs(std_mean)) + 1));
-
-                        if (is_wifi_mean != 0) {
-                            is_wifi_mean = is_wifi_mean / Math.pow(10, (int) (Math.log10(Math.abs(is_wifi_mean)) + 1));
-                        }
-
-                        min_diff = DataSupport.select("homeWifiLevel").findLast(SensorData.class).getHomeWifiLevel()
-                                    - DataSupport.select("homeWifiLevel").findFirst(SensorData.class).getHomeWifiLevel();
-                        num_diff = DataSupport.select("numOfWifi").findLast(SensorData.class).getNumOfWifi()
-                                - DataSupport.select("numOfWifi").findFirst(SensorData.class).getNumOfWifi();
-                        mean_diff = DataSupport.select("meanOfAllWifiLevel").findLast(SensorData.class).getMeanOfAllWifiLevel()
-                                - DataSupport.select("meanOfAllWifiLevel").findFirst(SensorData.class).getMeanOfAllWifiLevel();
-                        std_diff = DataSupport.select("stdOfAllWifiLevel").findLast(SensorData.class).getStdOfAllWifiLevel()
-                                - DataSupport.select("stdOfAllWifiLevel").findFirst(SensorData.class).getStdOfAllWifiLevel();
-
-                        if (min_diff != 0 && Math.abs(min_diff) >= 1) {
-                            min_diff = min_diff / Math.pow(10, (int) (Math.log10(Math.abs(min_diff)) + 1));
-                        }
-
-                        if (num_diff != 0 && Math.abs(num_diff) >= 1) {
-                            num_diff = num_diff / Math.pow(10, (int) (Math.log10(Math.abs(num_diff)) + 1));
-                        }
-
-                        if (mean_diff != 0 && Math.abs(mean_diff) >= 1) {
-                            mean_diff = mean_diff / Math.pow(10, (int) (Math.log10(Math.abs(mean_diff)) + 1));
-                        }
-
-                        if (std_diff != 0 && Math.abs(std_diff) >= 1) {
-                            std_diff = std_diff / Math.pow(10, (int) (Math.log10(Math.abs(std_diff)) + 1));
-                        }
-
-                        str = 0 + " 1:" + min_mean + " " + "2:" + num_mean + " " + "3:" + mean_mean
-                                + " " + "4:" + std_mean + " " + "5:" + is_wifi_mean + " " + "6:"
-                                + min_diff + " " + "7:" + num_diff + " " + "8:" + mean_diff + " "
-                                + "9:" + std_diff;
                         Log.d(TAG, str);
 
                         InputStream modelFile = getResources().openRawResource(R.raw.model);
@@ -172,7 +127,6 @@ public class MyService extends Service {
                         } catch (IOException e) {
                             Log.d(TAG, "onCreate: ");
                         }
-
                         int id = DataSupport.findFirst(SensorData.class).getId();
                         DataSupport.delete(SensorData.class,id);
                     }
@@ -213,10 +167,40 @@ public class MyService extends Service {
         super.onDestroy();
     }
 
-    private double UnitNormalization(Double num) {
+    private double unitNormalization(double num) {
         if (num != 0 && Math.abs(num) >= 1) {
             return num / Math.pow(10, (int) (Math.log10(Math.abs(num)) + 1));
         }
         return num;
+    }
+
+    private double getSumVar(String col) {
+
+        double first = 0, last = 0;
+
+        switch(col) {
+            case "homeWifiLevel":
+                first = DataSupport.select(col).findFirst(SensorData.class).getHomeWifiLevel();
+                last = DataSupport.select(col).findLast(SensorData.class).getHomeWifiLevel();
+                break;
+            case "numOfWifi":
+                first = DataSupport.select(col).findFirst(SensorData.class).getNumOfWifi();
+                last = DataSupport.select(col).findLast(SensorData.class).getNumOfWifi();
+                break;
+            case "meanOfAllWifiLevel":
+                first = DataSupport.select(col).findFirst(SensorData.class).getMeanOfAllWifiLevel();
+                last = DataSupport.select(col).findLast(SensorData.class).getMeanOfAllWifiLevel();
+                break;
+            case "stdOfAllWifiLevel":
+                first = DataSupport.select(col).findFirst(SensorData.class).getStdOfAllWifiLevel();
+                last = DataSupport.select(col).findLast(SensorData.class).getStdOfAllWifiLevel();
+                break;
+        }
+        return unitNormalization(last-first);
+    }
+
+    private double getMean(String col) {
+        double mean = DataSupport.average(SensorData.class, col);
+        return unitNormalization(mean);
     }
 }
