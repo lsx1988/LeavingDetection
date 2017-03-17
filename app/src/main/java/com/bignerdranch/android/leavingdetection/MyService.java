@@ -34,7 +34,7 @@ public class MyService extends Service {
     private static final String TAG = "MyService";
     private ScanWifi mBinder = new ScanWifi();
     private double homeWifilevel = 0;
-    private int queueSize = 3;
+    private int queueSize = 10;
     private BufferedReader model = null;
     private svm_predict predict = null;
     private double isHomeWifi = 1.0;
@@ -78,17 +78,11 @@ public class MyService extends Service {
                     meanOfAllWifi = allWifiLevel / numOfWifi;
                     Log.d(TAG, Double.toString(meanOfAllWifi));
 
-                    for (int i = 0; i < scanResults.size(); i++) {
-                        stdOfAllWifi += Math.pow((double)scanResults.get(i).level - meanOfAllWifi,2);
-                    }
-                    stdOfAllWifi = Math.sqrt(stdOfAllWifi / numOfWifi);
-
                     SensorData sample = new SensorData();
                     sample.setHomeWifiLevel(homeWifilevel);
-                    sample.setNumOfWifi(numOfWifi);
                     sample.setMeanOfAllWifiLevel(meanOfAllWifi);
-                    sample.setStdOfAllWifiLevel(stdOfAllWifi);
                     sample.setIsHomeWifi(isHomeWifi);
+                    sample.setStdOfAllWifiLevel(meanOfAllWifi);
                     sample.saveThrows();
 
                     stdOfAllWifi = 0;
@@ -97,14 +91,11 @@ public class MyService extends Service {
                     if (DataSupport.count(SensorData.class) == queueSize) {
 
                         str = 0 + " 1:" + getMean("homeWifiLevel")
-                                + " 2:" + getMean("numOfWifi")
-                                + " 3:" + getMean("meanOfAllWifiLevel")
-                                + " 4:" + getMean("stdOfAllWifiLevel")
-                                + " 5:" + getMean("isHomeWifi")
-                                + " 6:" + getSumVar("homeWifiLevel")
-                                + " 7:" + getSumVar("numOfWifi")
-                                + " 8:" + getSumVar("meanOfAllWifiLevel")
-                                + " 9:" + getSumVar("stdOfAllWifiLevel");
+                                + " 2:" + getMean("meanOfAllWifiLevel")
+                                + " 3:" + getMean("isHomeWifi")
+                                + " 4:" + getStd("stdOfAllWifiLevel")
+                                + " 5:" + getSumVar("homeWifiLevel")
+                                + " 6:" + getSumVar("meanOfAllWifiLevel");
 
                         Log.d(TAG, str);
 
@@ -114,14 +105,14 @@ public class MyService extends Service {
                         try {
                             result = predict.main(blank, str, model);
                             Message msg = new Message();
-                            if (result != 1.0) {
+                            if (getMean("isHomeWifi") != 1.0 || result == 1.0){
+                                msg.what = 1;
+                                mTimerTask.cancel();
+                            } else if (result != 1.0) {
                                 Bundle data = new Bundle();
                                 data.putDouble("wifiLevel", homeWifilevel);
                                 msg.what = 0;
                                 msg.setData(data);
-                            } else {
-                                msg.what = 1;
-                                mTimerTask.cancel();
                             }
                             mHandler.sendMessage(msg);
                         } catch (IOException e) {
@@ -132,7 +123,7 @@ public class MyService extends Service {
                     }
                 }
             };
-            timer.scheduleAtFixedRate(mTimerTask, 1000, 2000);
+            timer.scheduleAtFixedRate(mTimerTask, 1000,1000);
             Log.d(TAG, "startDownload executed");
         }
     }
@@ -150,7 +141,6 @@ public class MyService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate executed ");
-
     }
 
     @Override
@@ -159,10 +149,10 @@ public class MyService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-
     @Override
     public void onDestroy() {
         mTimerTask.cancel();
+        DataSupport.deleteAll(SensorData.class);
         Log.d(TAG, "onDestroy executed");
         super.onDestroy();
     }
@@ -176,31 +166,48 @@ public class MyService extends Service {
 
     private double getSumVar(String col) {
 
-        double first = 0, last = 0;
-
+        double average_first = 0, average_last = 0;
+        List<SensorData> firstSet, lastSet;
+        firstSet = DataSupport.select(col).order("id asc").limit(8).find(SensorData.class);
+        lastSet = DataSupport.select(col).order("id desc").limit(5).find(SensorData.class);
         switch(col) {
             case "homeWifiLevel":
-                first = DataSupport.select(col).findFirst(SensorData.class).getHomeWifiLevel();
-                last = DataSupport.select(col).findLast(SensorData.class).getHomeWifiLevel();
-                break;
-            case "numOfWifi":
-                first = DataSupport.select(col).findFirst(SensorData.class).getNumOfWifi();
-                last = DataSupport.select(col).findLast(SensorData.class).getNumOfWifi();
+                for (SensorData data:firstSet) {
+                    average_first += data.getHomeWifiLevel();
+                }
+
+                for (SensorData data:lastSet) {
+                    average_last += data.getHomeWifiLevel();
+                }
+
                 break;
             case "meanOfAllWifiLevel":
-                first = DataSupport.select(col).findFirst(SensorData.class).getMeanOfAllWifiLevel();
-                last = DataSupport.select(col).findLast(SensorData.class).getMeanOfAllWifiLevel();
-                break;
-            case "stdOfAllWifiLevel":
-                first = DataSupport.select(col).findFirst(SensorData.class).getStdOfAllWifiLevel();
-                last = DataSupport.select(col).findLast(SensorData.class).getStdOfAllWifiLevel();
+                for (SensorData data:firstSet) {
+                    average_first += data.getMeanOfAllWifiLevel();
+                }
+
+                for (SensorData data:lastSet) {
+                    average_last += data.getMeanOfAllWifiLevel();
+                }
                 break;
         }
-        return unitNormalization(last-first);
+        average_first = average_first / firstSet.size();
+        average_last = average_last / lastSet.size();
+        return Math.abs(average_last-average_first);
     }
 
     private double getMean(String col) {
         double mean = DataSupport.average(SensorData.class, col);
-        return unitNormalization(mean);
+        return mean;
+    }
+
+    private double getStd(String col) {
+        List<SensorData> temp = DataSupport.select(col).find(SensorData.class);
+        double mean = DataSupport.average(SensorData.class,col);
+        double result = 0;
+        for (int i = 0; i < temp.size() - 1; i++) {
+            result += Math.pow(temp.get(i).getStdOfAllWifiLevel() - mean,2);
+        }
+        return Math.sqrt(result / (temp.size() - 2));
     }
 }

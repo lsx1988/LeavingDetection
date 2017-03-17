@@ -10,17 +10,17 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.idescout.sql.SqlScoutServer;
-
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
     private MyService.ScanWifi mScanWifi;
     private TextView mTextView = null;
     private Button mIndicator = null;
+    private ProgressBar mProgressBar = null;
     private Wifi mWifi = null;
 
     @Override
@@ -33,12 +33,15 @@ public class MainActivity extends AppCompatActivity {
         mTextView.setVisibility(View.VISIBLE);
         mIndicator = (Button) findViewById(R.id.detection_indicator);
         mIndicator.setVisibility(View.INVISIBLE);
-
+        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
     }
 
     public void clickBtn(View view) {
         Intent bindIntent = new Intent(this, MyService.class);
         bindService(bindIntent, mServiceConnection, BIND_AUTO_CREATE);
+        mTextView.setVisibility(View.INVISIBLE);
+        mProgressBar.setVisibility(View.VISIBLE);
+        mIndicator.setVisibility(View.INVISIBLE);
     }
 
     private ServiceConnection mServiceConnection= new ServiceConnection() {
@@ -58,9 +61,10 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case 0:
-                    mTextView.setText(String.format(Locale.US,"%f",msg.getData().getDouble("wifiLevel")));
+                    mTextView.setText(String.valueOf(msg.getData().getDouble("wifiLevel")));
                     mTextView.setVisibility(View.VISIBLE);
                     mIndicator.setVisibility(View.INVISIBLE);
+                    mProgressBar.setVisibility(View.INVISIBLE);
                     break;
                 case 1:
                     mTextView.setVisibility(View.INVISIBLE);
