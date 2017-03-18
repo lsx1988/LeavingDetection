@@ -28,6 +28,7 @@ public class MyService extends Service {
     private android.os.Handler mHandler = null;
     private Wifi mWifi = null;
     private String[] blank = {"a", "b", "c"};
+    private String[] blank_scale = {"-r","scale_para","data"};
     private double result = 0;
     private String str = null;
 
@@ -50,7 +51,6 @@ public class MyService extends Service {
             mHandler = handler;
             wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
             predict = new svm_predict();
-
             Timer timer = new Timer();
             mTimerTask = new TimerTask() {
                 @Override
@@ -95,14 +95,12 @@ public class MyService extends Service {
                                 + " 4:" + getStd("stdOfAllWifiLevel")
                                 + " 5:" + getSumVar("homeWifiLevel")
                                 + " 6:" + getSumVar("meanOfAllWifiLevel");
-
-                        Log.d(TAG, str);
-
-                        InputStream modelFile = getResources().openRawResource(R.raw.model);
+                        InputStream modelFile = getResources().openRawResource(R.raw.model_scale);
                         model = new BufferedReader(new InputStreamReader(modelFile));
-
                         try {
-                            result = predict.main(blank, str, model);
+                            String scale_result = svm_scale.main(blank_scale,str, MyService.this);
+                            Log.d(TAG, scale_result);
+                            result = predict.main(blank, scale_result, model);
                             Message msg = new Message();
                             if (getMean("isHomeWifi") != 1.0 || result == 1.0){
                                 msg.what = 1;
@@ -122,7 +120,7 @@ public class MyService extends Service {
                     }
                 }
             };
-            timer.scheduleAtFixedRate(mTimerTask, 1000,1000);
+            timer.scheduleAtFixedRate(mTimerTask, 0,1000);
             Log.d(TAG, "startDownload executed");
         }
     }
