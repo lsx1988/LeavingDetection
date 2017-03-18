@@ -48,7 +48,6 @@ public class MyService extends Service {
         public void startScanning(android.os.Handler handler, Wifi wifi) {
 
             mHandler = handler;
-            mWifi = wifi;
             wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
             predict = new svm_predict();
 
@@ -175,7 +174,6 @@ public class MyService extends Service {
                 for (SensorData data:firstSet) {
                     average_first += data.getHomeWifiLevel();
                 }
-
                 for (SensorData data:lastSet) {
                     average_last += data.getHomeWifiLevel();
                 }

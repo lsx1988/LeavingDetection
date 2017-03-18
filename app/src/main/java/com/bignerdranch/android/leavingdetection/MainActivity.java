@@ -37,11 +37,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void clickBtn(View view) {
-        Intent bindIntent = new Intent(this, MyService.class);
-        bindService(bindIntent, mServiceConnection, BIND_AUTO_CREATE);
-        mTextView.setVisibility(View.INVISIBLE);
-        mProgressBar.setVisibility(View.VISIBLE);
-        mIndicator.setVisibility(View.INVISIBLE);
+
+        switch (view.getId()) {
+            case R.id.start_detection:
+                Intent bindIntent = new Intent(this, MyService.class);
+                bindService(bindIntent, mServiceConnection, BIND_AUTO_CREATE);
+                mTextView.setVisibility(View.INVISIBLE);
+                mProgressBar.setVisibility(View.VISIBLE);
+                mIndicator.setVisibility(View.INVISIBLE);
+                break;
+            case R.id.stop_detection:
+                unbindService(mServiceConnection);
+                mTextView.setText(R.string.stop_run);
+        }
     }
 
     private ServiceConnection mServiceConnection= new ServiceConnection() {
@@ -76,4 +84,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unbindService(mServiceConnection);
+    }
 }

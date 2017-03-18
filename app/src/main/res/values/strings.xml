@@ -1,7 +1,9 @@
 <resources>
     <string name="app_name">Leaving Detection</string>
     <string name="start_detection">START</string>
+    <string name="stop_detection">STOP</string>
     <string name="leaving_detected">Leaving Detected</string>
     <string name="wifi_level">Here is wifi level</string>
     <string name="Wifi_disconnect">No Wifi</string>
+    <string name="stop_run">Program stops</string>
 </resources>
