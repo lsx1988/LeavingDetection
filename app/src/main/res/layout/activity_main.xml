@@ -5,13 +5,28 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <Button
-        android:id="@+id/start_detection"
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/start_detection"
-        android:textSize="20sp"
-        android:onClick="clickBtn"/>
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/start_detection"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/start_detection"
+            android:textSize="20sp"
+            android:onClick="clickBtn"
+            android:layout_weight="1"/>
+        <Button
+            android:id="@+id/stop_detection"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/stop_detection"
+            android:textSize="20sp"
+            android:onClick="clickBtn"
+            android:layout_weight="1"/>
+    </LinearLayout>
+
 
     <FrameLayout
         android:layout_width="match_parent"
