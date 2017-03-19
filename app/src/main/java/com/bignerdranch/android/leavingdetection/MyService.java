@@ -27,9 +27,9 @@ public class MyService extends Service {
     private WifiInfo wifiInfo = null;
     private android.os.Handler mHandler = null;
     private Wifi mWifi = null;
-    private String[] blank = {"a", "b", "c"};
+    private String[] blank = {"-b","1", "a","b", "c"};
     private String[] blank_scale = {"-r","scale_para","data"};
-    private double result = 0;
+    private double[] result = null;
     private String str = null;
 
     private static final String TAG = "MyService";
@@ -71,11 +71,11 @@ public class MyService extends Service {
                         allWifiLevel = allWifiLevel + scanResult.level;
                     }
 
-                    Log.d(TAG, Double.toString(allWifiLevel));
+                    //Log.d(TAG, Double.toString(allWifiLevel));
 
                     numOfWifi = scanResults.size();
                     meanOfAllWifi = allWifiLevel / numOfWifi;
-                    Log.d(TAG, Double.toString(meanOfAllWifi));
+                    //Log.d(TAG, Double.toString(meanOfAllWifi));
 
                     SensorData sample = new SensorData();
                     sample.setHomeWifiLevel(homeWifilevel);
@@ -103,12 +103,16 @@ public class MyService extends Service {
                             Log.d(TAG, scale_result);
                             result = predict.main(blank, scale_result, model);
                             Message msg = new Message();
-                            if (getMean("isHomeWifi") != 1.0 || result == 1.0){
+                            if (getMean("isHomeWifi") != 1.0 || result[0] == 1.0){
+                                Bundle data = new Bundle();
+                                data.putDouble("Possibility", result[1]);
                                 msg.what = 1;
+                                msg.setData(data);
                                 mTimerTask.cancel();
-                            } else if (result != 1.0) {
+                            } else if (result[0] != 1.0) {
                                 Bundle data = new Bundle();
                                 data.putDouble("wifiLevel", getMean("homeWifiLevel"));
+                                data.putDouble("Possibility", result[1]);
                                 msg.what = 0;
                                 msg.setData(data);
                             }
@@ -166,8 +170,8 @@ public class MyService extends Service {
 
         double average_first = 0, average_last = 0;
         List<SensorData> firstSet, lastSet;
-        firstSet = DataSupport.select(col).order("id asc").limit(8).find(SensorData.class);
-        lastSet = DataSupport.select(col).order("id desc").limit(8).find(SensorData.class);
+        firstSet = DataSupport.select(col).order("id asc").limit(1).find(SensorData.class);
+        lastSet = DataSupport.select(col).order("id desc").limit(1).find(SensorData.class);
         switch(col) {
             case "homeWifiLevel":
                 for (SensorData data:firstSet) {
