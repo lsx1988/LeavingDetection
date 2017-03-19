@@ -107,7 +107,7 @@ public class MyService extends Service {
                                 mTimerTask.cancel();
                             } else if (result != 1.0) {
                                 Bundle data = new Bundle();
-                                data.putDouble("wifiLevel", homeWifilevel);
+                                data.putDouble("wifiLevel", getMean("homeWifiLevel"));
                                 msg.what = 0;
                                 msg.setData(data);
                             }
