@@ -95,6 +95,7 @@ public class MyService extends Service {
                                 + " 4:" + getStd("stdOfAllWifiLevel")
                                 + " 5:" + getSumVar("homeWifiLevel")
                                 + " 6:" + getSumVar("meanOfAllWifiLevel");
+                        Log.d(TAG, str);
                         InputStream modelFile = getResources().openRawResource(R.raw.model_scale);
                         model = new BufferedReader(new InputStreamReader(modelFile));
                         try {
@@ -149,7 +150,7 @@ public class MyService extends Service {
     @Override
     public void onDestroy() {
         mTimerTask.cancel();
-        DataSupport.deleteAll(SensorData.class);
+        //DataSupport.deleteAll(SensorData.class);
         Log.d(TAG, "onDestroy executed");
         super.onDestroy();
     }
@@ -166,7 +167,7 @@ public class MyService extends Service {
         double average_first = 0, average_last = 0;
         List<SensorData> firstSet, lastSet;
         firstSet = DataSupport.select(col).order("id asc").limit(8).find(SensorData.class);
-        lastSet = DataSupport.select(col).order("id desc").limit(5).find(SensorData.class);
+        lastSet = DataSupport.select(col).order("id desc").limit(8).find(SensorData.class);
         switch(col) {
             case "homeWifiLevel":
                 for (SensorData data:firstSet) {

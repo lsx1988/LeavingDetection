@@ -1,5 +1,6 @@
 package com.bignerdranch.android.leavingdetection;
 
+import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -7,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -15,6 +17,8 @@ import android.widget.TextView;
 
 import com.idescout.sql.SqlScoutServer;
 
+import org.litepal.crud.DataSupport;
+
 public class MainActivity extends AppCompatActivity {
 
     private MyService.ScanWifi mScanWifi;
@@ -22,12 +26,14 @@ public class MainActivity extends AppCompatActivity {
     private Button mIndicator = null;
     private ProgressBar mProgressBar = null;
     private Wifi mWifi = null;
+    private Vibrator vibrator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         SqlScoutServer.create(this, getPackageName());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        vibrator=(Vibrator)getSystemService(Service.VIBRATOR_SERVICE);
         mWifi = Wifi.get(this);
         mTextView = (TextView) findViewById(R.id.wifi_level);
         mTextView.setVisibility(View.VISIBLE);
@@ -48,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.stop_detection:
                 unbindService(mServiceConnection);
+                DataSupport.deleteAll(SensorData.class);
                 mTextView.setText(R.string.stop_run);
         }
     }
@@ -78,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
                     mTextView.setVisibility(View.INVISIBLE);
                     mIndicator.setVisibility(View.VISIBLE);
                     unbindService(mServiceConnection);
+                    vibrator.vibrate(2000);
                 default:
                     mTextView.setText(R.string.Wifi_disconnect);
                     break;
