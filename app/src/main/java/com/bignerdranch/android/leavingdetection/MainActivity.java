@@ -11,7 +11,6 @@ import android.os.Message;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -23,9 +22,8 @@ public class MainActivity extends AppCompatActivity {
 
     private MyService.ScanWifi mScanWifi;
     private TextView mTextView = null;
-    private Button mIndicator = null;
+    private TextView mPossibility = null;
     private ProgressBar mProgressBar = null;
-    private Wifi mWifi = null;
     private Vibrator vibrator;
 
     @Override
@@ -34,12 +32,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         vibrator=(Vibrator)getSystemService(Service.VIBRATOR_SERVICE);
-        mWifi = Wifi.get(this);
         mTextView = (TextView) findViewById(R.id.wifi_level);
         mTextView.setVisibility(View.VISIBLE);
-        mIndicator = (Button) findViewById(R.id.detection_indicator);
-        mIndicator.setVisibility(View.INVISIBLE);
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+        mPossibility = (TextView) findViewById(R.id.possibility);
     }
 
     public void clickBtn(View view) {
@@ -49,8 +45,8 @@ public class MainActivity extends AppCompatActivity {
                 Intent bindIntent = new Intent(this, MyService.class);
                 bindService(bindIntent, mServiceConnection, BIND_AUTO_CREATE);
                 mTextView.setVisibility(View.INVISIBLE);
+                mPossibility.setVisibility(View.INVISIBLE);
                 mProgressBar.setVisibility(View.VISIBLE);
-                mIndicator.setVisibility(View.INVISIBLE);
                 break;
             case R.id.stop_detection:
                 unbindService(mServiceConnection);
@@ -63,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             mScanWifi = (MyService.ScanWifi) iBinder;
-            mScanWifi.startScanning(mHandler, mWifi);
+            mScanWifi.startScanning(mHandler);
         }
 
         @Override
@@ -74,21 +70,18 @@ public class MainActivity extends AppCompatActivity {
 
     private Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case 0:
-                    mTextView.setText(String.valueOf(msg.getData().getDouble("wifiLevel")));
-                    mTextView.setVisibility(View.VISIBLE);
-                    mIndicator.setVisibility(View.INVISIBLE);
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    break;
-                case 1:
-                    mTextView.setVisibility(View.INVISIBLE);
-                    mIndicator.setVisibility(View.VISIBLE);
-                    unbindService(mServiceConnection);
-                    vibrator.vibrate(2000);
-                default:
-                    mTextView.setText(R.string.Wifi_disconnect);
-                    break;
+
+            mTextView.setVisibility(View.VISIBLE);
+            mPossibility.setVisibility(View.VISIBLE);
+            mProgressBar.setVisibility(View.INVISIBLE);
+
+            double possibility = msg.getData().getDouble("Possibility")*100;
+
+            mTextView.setText(String.valueOf(msg.getData().getDouble("wifiLevel")));
+            mPossibility.setText(String.format("%.2f", possibility) + "%");
+
+            if (msg.getData().getBoolean("alarm") == true){
+                vibrator.vibrate(2000);
             }
         }
     };

@@ -36,13 +36,13 @@ class svm_predict {
 		return Integer.parseInt(s);
 	}
 
-	private static double predict(String input, svm_model model, int predict_probability) throws IOException {
+	private static double[] predict(String input, svm_model model, int predict_probability) throws IOException {
 		int correct = 0;
 		int t_p = 0, f_p = 0, f_n = 0;
 		int total = 0;
 		double error = 0;
 		double sumv = 0, sumy = 0, sumvv = 0, sumyy = 0, sumvy = 0;
-		double result = 0;
+		double[] result = new double[2];
 
 		int svm_type=svm.svm_get_svm_type(model);
 		int nr_class=svm.svm_get_nr_class(model);
@@ -85,7 +85,12 @@ class svm_predict {
 				//output.writeBytes(v+" ");
 				//for(int j=0;j<nr_class;j++)
 				//	output.writeBytes(prob_estimates[j]+" ");
-				//output.writeBytes("\n");
+//				//output.writeBytes("\n");
+//				if (prob_estimates[1] >=0.95) {
+//					v = 1.0;
+//				} else {
+//					v = 0.0;
+//				}
 			}
 			else {
 				v = svm.svm_predict(model,x);
@@ -109,7 +114,8 @@ class svm_predict {
 			sumvy += v*target;
 			++total;
 
-			result = v;
+			result[0] = v;
+			result[1] = prob_estimates[1];
 
 		if(svm_type == svm_parameter.EPSILON_SVR ||
 		   svm_type == svm_parameter.NU_SVR) {
@@ -124,6 +130,7 @@ class svm_predict {
 					"% (" + correct + "/" + total + ") (classification)\n");
 			svm_predict.info("Precision = "+(double) t_p /(t_p + f_p) * 100 + "%\n");
 			svm_predict.info("Recall = "+(double) t_p / (t_p + f_n) * 100 + "%\n");
+			svm_predict.info("Possiblity = "+prob_estimates[1]+"%\n");
 		}
 
 		return result;
@@ -137,9 +144,9 @@ class svm_predict {
 		System.exit(1);
 	}
 
-	public static Double main(String argv[], String input_self, BufferedReader model_self) throws IOException {
+	public static double[] main(String argv[], String input_self, BufferedReader model_self) throws IOException {
 		int i, predict_probability=0;
-		double result = 0;
+		double[] result = null;
         	svm_print_string = svm_print_stdout;
 
 		// parse options
