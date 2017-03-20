@@ -26,27 +26,23 @@ public class MyService extends Service {
     private WifiManager wifiManager = null;
     private WifiInfo wifiInfo = null;
     private android.os.Handler mHandler = null;
-    private Wifi mWifi = null;
     private String[] blank = {"-b","1", "a","b", "c"};
     private String[] blank_scale = {"-r","scale_para","data"};
     private double[] result = null;
     private String str = null;
-
     private static final String TAG = "MyService";
     private ScanWifi mBinder = new ScanWifi();
     private double homeWifilevel = 0;
     private int queueSize = 10;
     private BufferedReader model = null;
     private svm_predict predict = null;
-    private double isHomeWifi = 1.0;
-    private double numOfWifi = 0.0;
-    private double allWifiLevel = 0.0;
-    private double meanOfAllWifi = 0.0;
-    private double stdOfAllWifi = 0.0;
+    private double isHomeWifi = 1.0, allWifiLevel = 0.0, meanOfAllWifi = 0.0;
     private TimerTask mTimerTask = null;
+    private Bundle data = null;
+    private boolean  stayInside= false, stayOutside= false;
 
     class ScanWifi extends Binder {
-        public void startScanning(android.os.Handler handler, Wifi wifi) {
+        public void startScanning(android.os.Handler handler) {
 
             mHandler = handler;
             wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
@@ -70,12 +66,9 @@ public class MyService extends Service {
                     for (ScanResult scanResult : scanResults) {
                         allWifiLevel = allWifiLevel + scanResult.level;
                     }
+                    meanOfAllWifi = allWifiLevel / scanResults.size();
 
-                    //Log.d(TAG, Double.toString(allWifiLevel));
-
-                    numOfWifi = scanResults.size();
-                    meanOfAllWifi = allWifiLevel / numOfWifi;
-                    //Log.d(TAG, Double.toString(meanOfAllWifi));
+                    allWifiLevel = 0;
 
                     SensorData sample = new SensorData();
                     sample.setHomeWifiLevel(homeWifilevel);
@@ -83,9 +76,6 @@ public class MyService extends Service {
                     sample.setIsHomeWifi(isHomeWifi);
                     sample.setStdOfAllWifiLevel(meanOfAllWifi);
                     sample.saveThrows();
-
-                    stdOfAllWifi = 0;
-                    allWifiLevel = 0;
 
                     if (DataSupport.count(SensorData.class) == queueSize) {
 
@@ -103,19 +93,41 @@ public class MyService extends Service {
                             Log.d(TAG, scale_result);
                             result = predict.main(blank, scale_result, model);
                             Message msg = new Message();
+
+                            data = new Bundle();
+                            data.putDouble("wifiLevel", getMean("homeWifiLevel"));
+                            data.putDouble("Possibility", result[1]);
+
                             if (getMean("isHomeWifi") != 1.0 || result[0] == 1.0){
-                                Bundle data = new Bundle();
-                                data.putDouble("Possibility", result[1]);
-                                msg.what = 1;
-                                msg.setData(data);
-                                mTimerTask.cancel();
+
+                                if (result[1] >= 0.95) {
+                                    stayOutside = true;
+                                }
+
+                                if (stayOutside == true && stayInside == true) {
+                                    data.putBoolean("alarm", true);
+                                    if (result[1] >= 0.95) {
+                                        stayInside = false;
+                                    }
+                                } else {
+                                    data.putBoolean("alarm", false);
+                                }
                             } else if (result[0] != 1.0) {
-                                Bundle data = new Bundle();
-                                data.putDouble("wifiLevel", getMean("homeWifiLevel"));
-                                data.putDouble("Possibility", result[1]);
-                                msg.what = 0;
-                                msg.setData(data);
+
+                                if (result[1] <= 0.1) {
+                                    stayInside = true;
+                                }
+
+                                if (stayInside == true && stayOutside == true) {
+                                    data.putBoolean("alarm", true);
+                                    if (result[1] <= 0.1) {
+                                        stayOutside = false;
+                                    }
+                                } else {
+                                    data.putBoolean("alarm", false);
+                                }
                             }
+                            msg.setData(data);
                             mHandler.sendMessage(msg);
                         } catch (IOException e) {
                             Log.d(TAG, "onCreate: ");
@@ -154,16 +166,8 @@ public class MyService extends Service {
     @Override
     public void onDestroy() {
         mTimerTask.cancel();
-        //DataSupport.deleteAll(SensorData.class);
         Log.d(TAG, "onDestroy executed");
         super.onDestroy();
-    }
-
-    private double unitNormalization(double num) {
-        if (num != 0 && Math.abs(num) >= 1) {
-            return num / Math.pow(10, (int) (Math.log10(Math.abs(num)) + 1));
-        }
-        return num;
     }
 
     private double getSumVar(String col) {

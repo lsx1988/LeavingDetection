@@ -86,11 +86,11 @@ class svm_predict {
 				//for(int j=0;j<nr_class;j++)
 				//	output.writeBytes(prob_estimates[j]+" ");
 //				//output.writeBytes("\n");
-				if (prob_estimates[1] >=0.95) {
-					v = 1.0;
-				} else {
-					v = 0.0;
-				}
+//				if (prob_estimates[1] >=0.95) {
+//					v = 1.0;
+//				} else {
+//					v = 0.0;
+//				}
 			}
 			else {
 				v = svm.svm_predict(model,x);

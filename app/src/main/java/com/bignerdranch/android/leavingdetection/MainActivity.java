@@ -24,7 +24,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView mTextView = null;
     private TextView mPossibility = null;
     private ProgressBar mProgressBar = null;
-    private Wifi mWifi = null;
     private Vibrator vibrator;
 
     @Override
@@ -33,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         vibrator=(Vibrator)getSystemService(Service.VIBRATOR_SERVICE);
-        mWifi = Wifi.get(this);
         mTextView = (TextView) findViewById(R.id.wifi_level);
         mTextView.setVisibility(View.VISIBLE);
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
@@ -61,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             mScanWifi = (MyService.ScanWifi) iBinder;
-            mScanWifi.startScanning(mHandler, mWifi);
+            mScanWifi.startScanning(mHandler);
         }
 
         @Override
@@ -72,24 +70,18 @@ public class MainActivity extends AppCompatActivity {
 
     private Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case 0:
-                    mTextView.setText(String.valueOf(msg.getData().getDouble("wifiLevel")));
-                    mPossibility.setText(String.format("%.2f", msg.getData().getDouble("Possibility")*100) + "%");
-                    mTextView.setVisibility(View.VISIBLE);
-                    mPossibility.setVisibility(View.VISIBLE);
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    break;
-                case 1:
-                    mTextView.setVisibility(View.VISIBLE);
-                    mPossibility.setVisibility(View.VISIBLE);
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    mPossibility.setText(String.format("%.2f", msg.getData().getDouble("Possibility")*100) + "%");
-                    unbindService(mServiceConnection);
-                    vibrator.vibrate(2000);
-                default:
-                    mTextView.setText(R.string.Wifi_disconnect);
-                    break;
+
+            mTextView.setVisibility(View.VISIBLE);
+            mPossibility.setVisibility(View.VISIBLE);
+            mProgressBar.setVisibility(View.INVISIBLE);
+
+            double possibility = msg.getData().getDouble("Possibility")*100;
+
+            mTextView.setText(String.valueOf(msg.getData().getDouble("wifiLevel")));
+            mPossibility.setText(String.format("%.2f", possibility) + "%");
+
+            if (msg.getData().getBoolean("alarm") == true){
+                vibrator.vibrate(2000);
             }
         }
     };
