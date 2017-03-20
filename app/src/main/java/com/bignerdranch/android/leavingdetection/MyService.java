@@ -170,8 +170,8 @@ public class MyService extends Service {
 
         double average_first = 0, average_last = 0;
         List<SensorData> firstSet, lastSet;
-        firstSet = DataSupport.select(col).order("id asc").limit(1).find(SensorData.class);
-        lastSet = DataSupport.select(col).order("id desc").limit(1).find(SensorData.class);
+        firstSet = DataSupport.select(col).order("id asc").limit(5).find(SensorData.class);
+        lastSet = DataSupport.select(col).order("id desc").limit(5).find(SensorData.class);
         switch(col) {
             case "homeWifiLevel":
                 for (SensorData data:firstSet) {
