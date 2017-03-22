@@ -52,6 +52,8 @@ public class MyService extends Service {
                 @Override
                 public void run() {
 
+                    wifiManager.startScan();
+
                     wifiInfo = wifiManager.getConnectionInfo();
                     homeWifilevel = wifiInfo.getRssi();
 
@@ -79,12 +81,21 @@ public class MyService extends Service {
 
                     if (DataSupport.count(SensorData.class) == queueSize) {
 
-                        str = 0 + " 1:" + getMean("homeWifiLevel")
-                                + " 2:" + getMean("meanOfAllWifiLevel")
-                                + " 3:" + getMean("isHomeWifi")
-                                + " 4:" + getStd("stdOfAllWifiLevel")
-                                + " 5:" + getSumVar("homeWifiLevel")
-                                + " 6:" + getSumVar("meanOfAllWifiLevel");
+                        if (stayInside == false && stayOutside == true) {
+                            str = 0 + " 1:" + getMean("homeWifiLevel")
+                                    + " 2:" + getMean("meanOfAllWifiLevel")
+                                    + " 3:" + getMean("isHomeWifi")
+                                    + " 4:" + getStd("stdOfAllWifiLevel")
+                                    + " 5:" + (-getSumVar("homeWifiLevel"))
+                                    + " 6:" + (-getSumVar("meanOfAllWifiLevel"));
+                        } else {
+                            str = 0 + " 1:" + getMean("homeWifiLevel")
+                                    + " 2:" + getMean("meanOfAllWifiLevel")
+                                    + " 3:" + getMean("isHomeWifi")
+                                    + " 4:" + getStd("stdOfAllWifiLevel")
+                                    + " 5:" + getSumVar("homeWifiLevel")
+                                    + " 6:" + getSumVar("meanOfAllWifiLevel");
+                        }
                         Log.d(TAG, str);
                         InputStream modelFile = getResources().openRawResource(R.raw.model_scale);
                         model = new BufferedReader(new InputStreamReader(modelFile));
