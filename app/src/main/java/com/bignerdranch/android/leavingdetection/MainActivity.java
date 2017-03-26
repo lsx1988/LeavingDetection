@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.stop_detection:
                 unbindService(mServiceConnection);
-                DataSupport.deleteAll(SensorData.class);
+                DataSupport.deleteAll(WifiData.class);
                 mTextView.setText(R.string.stop_run);
         }
     }
