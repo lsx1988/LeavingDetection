@@ -8,12 +8,13 @@ public class MessageEvent {
 
     public double wifiLevel;
     public double possibility;
-    public boolean isAlarm;
+    public double predict;
 
-    public MessageEvent(double wifiLevel, double possibility, boolean isAlarm) {
+
+    public MessageEvent(double wifiLevel, double possibility, double predict) {
         this.wifiLevel = wifiLevel;
         this.possibility = possibility;
-        this.isAlarm = isAlarm;
+        this.predict = predict;
     }
 
     public double getWifiLevel() {
@@ -32,11 +33,11 @@ public class MessageEvent {
         this.possibility = possibility;
     }
 
-    public boolean isAlarm() {
-        return isAlarm;
+    public double getPredict() {
+        return predict;
     }
 
-    public void setAlarm(boolean alarm) {
-        isAlarm = alarm;
+    public void setPredict(double predict) {
+        this.predict = predict;
     }
 }

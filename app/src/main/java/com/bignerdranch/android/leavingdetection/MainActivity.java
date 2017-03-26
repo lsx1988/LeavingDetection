@@ -5,17 +5,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.idescout.sql.SqlScoutServer;
-
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-import org.litepal.crud.DataSupport;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -27,9 +23,10 @@ public class MainActivity extends AppCompatActivity {
 
     private Vibrator vibrator;
     private Intent serviceIntent;
-    private String wifiLevel;
-    private String possibility;
-    private boolean isAlarm;
+    private double wifiLevel;
+    private double possibility;
+    private double predict;
+    private boolean  stayInside= false, stayOutside= false;
 
     @BindView(R.id.wifi_level) TextView mTextView;
     @BindView(R.id.progressBar) ProgressBar mProgressBar;
@@ -37,46 +34,30 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        SqlScoutServer.create(this, getPackageName());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         vibrator = (Vibrator) getSystemService(Service.VIBRATOR_SERVICE);
         mTextView.setVisibility(View.VISIBLE);
         serviceIntent = new Intent(this, MyService.class);
-        startService(serviceIntent);
+
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        startService(serviceIntent);
         EventBus.getDefault().register(this);
     }
 
     @OnClick(R.id.stop_detection) void stop() {
         stopService(serviceIntent);
-        DataSupport.deleteAll(SensorData.class);
         mTextView.setText(R.string.stop_run);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(MessageEvent event) {
-        Log.e(TAG, String.valueOf(Thread.currentThread().getId()));
-        mTextView.setVisibility(View.VISIBLE);
-        mPossibility.setVisibility(View.VISIBLE);
-        mProgressBar.setVisibility(View.INVISIBLE);
-
-        wifiLevel = String.valueOf(event.getWifiLevel());
-        possibility = String.format("%.2f", event.getPossibility()*100) + "%";
-        isAlarm = event.isAlarm();
-
-        mTextView.setText(wifiLevel);
-        mPossibility.setText(possibility);
-
-        if (isAlarm == true){
-            vibrator.vibrate(2000);
-        }
-
+        updateUI(event, mTextView, mPossibility);
     }
 
     @Override
@@ -88,5 +69,38 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+    }
+
+    private void updateUI(MessageEvent event, TextView mTextView, TextView mPossibility) {
+
+        wifiLevel = event.getWifiLevel();
+        possibility = event.getPossibility();
+        predict = event.getPredict();
+
+        mTextView.setText(String.valueOf(wifiLevel));
+        mPossibility.setText(String.format("%.2f", possibility * 100) + "%");
+
+        if (predict == 1.0) {
+
+            if (possibility >= 0.95) {
+                stayOutside = true;
+            }
+
+            if (stayOutside == true && stayInside == true) {
+                vibrator.vibrate(2000);
+                stayInside = false;
+            }
+
+        }else if (predict != 1.0) {
+
+            if (possibility <= 0.1) {
+                stayInside = true;
+            }
+
+            if (stayInside == true && stayOutside == true) {
+                vibrator.vibrate(2000);
+                stayOutside = false;
+            }
+        }
     }
 }
