@@ -40,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
         vibrator = (Vibrator) getSystemService(Service.VIBRATOR_SERVICE);
         mTextView.setVisibility(View.VISIBLE);
         serviceIntent = new Intent(this, MyService.class);
-
     }
 
     @Override

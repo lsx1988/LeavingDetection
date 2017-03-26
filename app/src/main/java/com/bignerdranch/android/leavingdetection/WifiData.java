@@ -6,7 +6,7 @@ import org.litepal.crud.DataSupport;
  * Created by shixunliu on 13/3/17.
  */
 
-public class SensorData extends DataSupport{
+public class WifiData extends DataSupport{
 
 
     private int id;

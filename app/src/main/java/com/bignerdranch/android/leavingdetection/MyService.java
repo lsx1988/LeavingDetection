@@ -17,6 +17,7 @@ import com.idescout.sql.SqlScoutServer;
 
 import org.litepal.crud.DataSupport;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MyService extends Service implements SensorEventListener {
@@ -27,6 +28,7 @@ public class MyService extends Service implements SensorEventListener {
     private Handler handler;
     private HandlerThread handlerThread;
     private long lastTimeStamp;
+    private List<PressureData> pressureDataList;
 
 
     @Override
@@ -41,6 +43,7 @@ public class MyService extends Service implements SensorEventListener {
         SqlScoutServer.create(this, getPackageName());
 
         lastTimeStamp = 0;
+        pressureDataList = new ArrayList<>();
 
         Log.d(TAG, "-------------------------------------------------------------------------"+String.valueOf(lastTimeStamp));
 
@@ -67,7 +70,7 @@ public class MyService extends Service implements SensorEventListener {
         stopSelf();
         handlerThread.quit();
         mSensorManager.unregisterListener(this);
-        DataSupport.deleteAll(SensorData.class);
+        DataSupport.deleteAll(WifiData.class);
         Log.d(TAG, "onDestroy executed");
     }
 
@@ -76,12 +79,20 @@ public class MyService extends Service implements SensorEventListener {
     public void onSensorChanged(SensorEvent event) {
 
         long currentTimeStamp = event.timestamp / 1000000;
+        
+        if (event.sensor.getType() == Sensor.TYPE_PRESSURE) {
+            Log.d(TAG, String.valueOf(event.values[0]));
+            PressureData pressureData = new PressureData();
+            pressureData.setPressure(event.values[0]);
+            pressureDataList.add(pressureData);
+        }
 
         //Log.d(TAG, String.valueOf(currentTimeStamp));
 
         if (currentTimeStamp - lastTimeStamp >= 1000) {
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                handler.post(new DataProcessThread(wifiManager, getApplicationContext()));
+                handler.post(new DataProcessThread(pressureDataList, wifiManager,getApplicationContext()));
+                pressureDataList.clear();
             }
 
             lastTimeStamp = currentTimeStamp;
@@ -98,7 +109,7 @@ public class MyService extends Service implements SensorEventListener {
         for (Sensor sensor : sensorList) {
             if (sensor.getType() == Sensor.TYPE_ACCELEROMETER
                     || sensor.getType() == Sensor.TYPE_PRESSURE) {
-                mSensorManager.registerListener(this, sensor, 1000000);
+                mSensorManager.registerListener(this, sensor, 100000);
             }
         }
     }

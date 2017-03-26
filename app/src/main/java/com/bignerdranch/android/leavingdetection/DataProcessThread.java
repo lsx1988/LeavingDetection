@@ -21,57 +21,35 @@ import java.util.List;
 
 public class DataProcessThread implements Runnable {
 
-    private WifiManager wifiManager;
+    private WifiManager mWifiManager;
     private WifiInfo wifiInfo;
     private String[] blank = {"-b","1", "a","b", "c"};
     private String[] blank_scale = {"-r","scale_para","data"};
     private double[] result = null;
     private String str = null;
     private static final String TAG = "MyThread";
-    private double homeWifilevel = 0;
     private int queueSize = 10;
     private BufferedReader model = null;
     private svm_predict predict = null;
-    private double isHomeWifi = 1.0, allWifiLevel = 0.0, meanOfAllWifi = 0.0;
     private boolean  stayInside= false, stayOutside= false;
     private Context mContext;
+    private List<PressureData> mPressureList;
 
-    public DataProcessThread(WifiManager wifiManager, Context context) {
-        this.wifiManager = wifiManager;
+    public DataProcessThread(List<PressureData> pressureList, WifiManager wifiManager, Context context) {
+        this.mWifiManager = wifiManager;
         this.mContext = context;
         this.predict = new svm_predict();
+        this.mPressureList = pressureList;
     }
 
     @Override
     public void run() {
         Log.e(TAG, String.valueOf(Thread.currentThread().getId()));
-        wifiManager.startScan();
-        wifiInfo = wifiManager.getConnectionInfo();
-        homeWifilevel = wifiInfo.getRssi();
 
-        if (Math.abs(homeWifilevel) >= 95) {
-            homeWifilevel = -95;
-            isHomeWifi = 0.0;
-        } else {
-            isHomeWifi = 1.0;
-        }
+        saveWifiData(mWifiManager);
+        savePressureData(mPressureList);
 
-        List<ScanResult> scanResults = wifiManager.getScanResults();//搜索到的设备列表
-        for (ScanResult scanResult : scanResults) {
-            allWifiLevel = allWifiLevel + scanResult.level;
-        }
-        meanOfAllWifi = allWifiLevel / scanResults.size();
-
-        allWifiLevel = 0;
-
-        SensorData sample = new SensorData();
-        sample.setHomeWifiLevel(homeWifilevel);
-        sample.setMeanOfAllWifiLevel(meanOfAllWifi);
-        sample.setIsHomeWifi(isHomeWifi);
-        sample.setStdOfAllWifiLevel(meanOfAllWifi);
-        sample.saveThrows();
-
-        if (DataSupport.count(SensorData.class) == queueSize) {
+        if (DataSupport.count(WifiData.class) == queueSize) {
 
             if (stayInside == false && stayOutside == true) {
                 str = 0 + " 1:" + getMean("homeWifiLevel")
@@ -99,33 +77,35 @@ public class DataProcessThread implements Runnable {
             } catch (IOException e) {
                 Log.d(TAG, "onCreate: ");
             }
-            int id = DataSupport.findFirst(SensorData.class).getId();
-            DataSupport.delete(SensorData.class, id);
+            int id = DataSupport.findFirst(WifiData.class).getId();
+            DataSupport.delete(WifiData.class, id);
         }
     }
+
+
 
     private double getSumVar(String col) {
 
         double average_first = 0, average_last = 0;
-        List<SensorData> firstSet, lastSet;
-        firstSet = DataSupport.select(col).order("id asc").limit(5).find(SensorData.class);
-        lastSet = DataSupport.select(col).order("id desc").limit(5).find(SensorData.class);
+        List<WifiData> firstSet, lastSet;
+        firstSet = DataSupport.select(col).order("id asc").limit(5).find(WifiData.class);
+        lastSet = DataSupport.select(col).order("id desc").limit(5).find(WifiData.class);
         switch(col) {
             case "homeWifiLevel":
-                for (SensorData data:firstSet) {
+                for (WifiData data:firstSet) {
                     average_first += data.getHomeWifiLevel();
                 }
-                for (SensorData data:lastSet) {
+                for (WifiData data:lastSet) {
                     average_last += data.getHomeWifiLevel();
                 }
 
                 break;
             case "meanOfAllWifiLevel":
-                for (SensorData data:firstSet) {
+                for (WifiData data:firstSet) {
                     average_first += data.getMeanOfAllWifiLevel();
                 }
 
-                for (SensorData data:lastSet) {
+                for (WifiData data:lastSet) {
                     average_last += data.getMeanOfAllWifiLevel();
                 }
                 break;
@@ -136,17 +116,55 @@ public class DataProcessThread implements Runnable {
     }
 
     private double getMean(String col) {
-        double mean = DataSupport.average(SensorData.class, col);
+        double mean = DataSupport.average(WifiData.class, col);
         return mean;
     }
 
     private double getStd(String col) {
-        List<SensorData> temp = DataSupport.select(col).find(SensorData.class);
-        double mean = DataSupport.average(SensorData.class,col);
+        List<WifiData> temp = DataSupport.select(col).find(WifiData.class);
+        double mean = DataSupport.average(WifiData.class,col);
         double result = 0;
         for (int i = 0; i < temp.size() - 1; i++) {
             result += Math.pow(temp.get(i).getStdOfAllWifiLevel() - mean,2);
         }
         return Math.sqrt(result / (temp.size() - 2));
+    }
+
+    private void savePressureData(List<PressureData> dataList) {
+        DataSupport.saveAll(dataList);
+    }
+
+    private void saveWifiData(WifiManager WifiManager) {
+
+        WifiInfo wifiInfo = null;
+        double isHomeWifi = 0;
+        double allWifiLevel = 0;
+        double meanOfAllWifi = 0;
+        double homeWifiLevel = 0;
+
+        mWifiManager.startScan();
+        wifiInfo = mWifiManager.getConnectionInfo();
+
+
+        homeWifiLevel = wifiInfo.getRssi();
+        if (Math.abs(homeWifiLevel) >= 95) {
+            homeWifiLevel = -95;
+            isHomeWifi = 0.0;
+        } else {
+            isHomeWifi = 1.0;
+        }
+
+        List<ScanResult> scanResults = mWifiManager.getScanResults();
+        for (ScanResult scanResult : scanResults) {
+            allWifiLevel = allWifiLevel + scanResult.level;
+        }
+        meanOfAllWifi = allWifiLevel / scanResults.size();
+
+        WifiData sample = new WifiData();
+        sample.setHomeWifiLevel(homeWifiLevel);
+        sample.setMeanOfAllWifiLevel(meanOfAllWifi);
+        sample.setIsHomeWifi(isHomeWifi);
+        sample.setStdOfAllWifiLevel(meanOfAllWifi);
+        sample.saveThrows();
     }
 }
