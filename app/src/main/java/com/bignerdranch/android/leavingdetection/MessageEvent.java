@@ -9,12 +9,14 @@ public class MessageEvent {
     public double wifiLevel;
     public double possibility;
     public double predict;
+    public double pressure;
 
 
-    public MessageEvent(double wifiLevel, double possibility, double predict) {
+    public MessageEvent(double wifiLevel, double possibility, double predict, double pressure) {
         this.wifiLevel = wifiLevel;
         this.possibility = possibility;
         this.predict = predict;
+        this.pressure = pressure;
     }
 
     public double getWifiLevel() {
@@ -39,5 +41,13 @@ public class MessageEvent {
 
     public void setPredict(double predict) {
         this.predict = predict;
+    }
+
+    public double getPressure() {
+        return pressure;
+    }
+
+    public void setPressure(double pressure) {
+        this.pressure = pressure;
     }
 }

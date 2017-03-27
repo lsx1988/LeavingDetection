@@ -13,8 +13,6 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.idescout.sql.SqlScoutServer;
-
 import org.litepal.crud.DataSupport;
 
 import java.util.ArrayList;
@@ -28,7 +26,8 @@ public class MyService extends Service implements SensorEventListener {
     private Handler handler;
     private HandlerThread handlerThread;
     private long lastTimeStamp;
-    private List<PressureData> pressureDataList;
+    private List<Double> pressureDataList;
+    private boolean usePressure;
 
 
     @Override
@@ -40,27 +39,19 @@ public class MyService extends Service implements SensorEventListener {
     public void onCreate() {
         super.onCreate();
 
-        SqlScoutServer.create(this, getPackageName());
-
-        lastTimeStamp = 0;
-        pressureDataList = new ArrayList<>();
-
-        Log.d(TAG, "-------------------------------------------------------------------------"+String.valueOf(lastTimeStamp));
-
-        wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
-
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
-        handler = trigerHandlerThread();
-
-        registerSensor();
-
-        Log.d(TAG, "onCreate executed ");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand executed");
+        usePressure = (boolean) intent.getExtras().get("usePressure");
+        lastTimeStamp = 0;
+        pressureDataList = new ArrayList<>();
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        handler = trigerHandlerThread();
+        registerSensor();
+        DataSupport.deleteAll(WifiData.class);
+        DataSupport.deleteAll(PressureData.class);
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -70,7 +61,6 @@ public class MyService extends Service implements SensorEventListener {
         stopSelf();
         handlerThread.quit();
         mSensorManager.unregisterListener(this);
-        DataSupport.deleteAll(WifiData.class);
         Log.d(TAG, "onDestroy executed");
     }
 
@@ -82,20 +72,25 @@ public class MyService extends Service implements SensorEventListener {
         
         if (event.sensor.getType() == Sensor.TYPE_PRESSURE) {
             Log.d(TAG, String.valueOf(event.values[0]));
-            PressureData pressureData = new PressureData();
-            pressureData.setPressure(event.values[0]);
-            pressureDataList.add(pressureData);
+            pressureDataList.add(Double.parseDouble(Float.toString(event.values[0])));
         }
 
         //Log.d(TAG, String.valueOf(currentTimeStamp));
 
         if (currentTimeStamp - lastTimeStamp >= 1000) {
-            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                handler.post(new DataProcessThread(pressureDataList, wifiManager,getApplicationContext()));
-                pressureDataList.clear();
+            double sum = 0;
+            for (Double data: pressureDataList) {
+                sum += data.doubleValue();
             }
-
+            PressureData pressureData = new PressureData();
+            if (usePressure == true) {
+                pressureData.setPressure(sum / pressureDataList.size());
+            } else {
+                pressureData.setPressure(0);
+            }
+            handler.post(new DataProcessThread(pressureData, wifiManager,getApplicationContext()));
             lastTimeStamp = currentTimeStamp;
+            pressureDataList.clear();
         }
     }
 
@@ -107,8 +102,10 @@ public class MyService extends Service implements SensorEventListener {
     private void registerSensor() {
         List<Sensor> sensorList = mSensorManager.getSensorList(Sensor.TYPE_ALL);
         for (Sensor sensor : sensorList) {
-            if (sensor.getType() == Sensor.TYPE_ACCELEROMETER
-                    || sensor.getType() == Sensor.TYPE_PRESSURE) {
+            if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                mSensorManager.registerListener(this, sensor, 100000);
+            }
+            if (sensor.getType() == Sensor.TYPE_PRESSURE && usePressure == true) {
                 mSensorManager.registerListener(this, sensor, 100000);
             }
         }

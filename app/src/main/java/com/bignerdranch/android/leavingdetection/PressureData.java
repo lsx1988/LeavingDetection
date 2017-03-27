@@ -8,14 +8,14 @@ import org.litepal.crud.DataSupport;
 
 public class PressureData extends DataSupport {
 
-    private float pressure;
+    private double pressure;
     private int id;
 
-    public float getPressure() {
+    public double getPressure() {
         return pressure;
     }
 
-    public void setPressure(float pressure) {
+    public void setPressure(double pressure) {
         this.pressure = pressure;
     }
 

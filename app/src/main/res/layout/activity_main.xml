@@ -30,6 +30,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <CheckBox
+            android:id="@+id/use_pressure"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:hint="Use Pressure"
+            android:layout_marginLeft="150dp"/>
+
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="match_parent"
@@ -44,6 +51,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:hint="@string/wifi_level"
+                android:layout_gravity="center"
+                android:textSize="25sp"/>
+            <TextView
+                android:id="@+id/pressure_level"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="Pressure Level"
                 android:layout_gravity="center"
                 android:textSize="25sp"/>
             <TextView

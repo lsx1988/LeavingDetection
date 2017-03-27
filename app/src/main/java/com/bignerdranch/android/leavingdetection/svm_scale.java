@@ -102,7 +102,7 @@ class svm_scale
 		return line;
 	}
 
-	private String run(String []argv, String data) throws IOException
+	private String run(String []argv, String data, boolean isPressureExit) throws IOException
 	{
 		int i,index;
 		BufferedReader fp = null, fp_restore = null;
@@ -165,9 +165,13 @@ class svm_scale
 
 			try {
 				//fp_restore = new BufferedReader(new FileReader(restore_filename));
-
-				InputStream scaleParaFile = context.getResources().openRawResource(R.raw.scale_para);
-				scalePara = new BufferedReader(new InputStreamReader(scaleParaFile));
+				if(isPressureExit == true){
+					InputStream scaleParaFile = context.getResources().openRawResource(R.raw.scale_wifi_pressure);
+					scalePara = new BufferedReader(new InputStreamReader(scaleParaFile));
+				} else {
+					InputStream scaleParaFile = context.getResources().openRawResource(R.raw.scale_para);
+					scalePara = new BufferedReader(new InputStreamReader(scaleParaFile));
+				}
 				fp_restore = scalePara;
 			}
 			catch (Exception e) {
@@ -192,8 +196,13 @@ class svm_scale
 			}
 			//fp_restore = rewind(fp_restore, restore_filename);
 			fp_restore.close();
-			InputStream scaleParaFile = context.getResources().openRawResource(R.raw.scale_para);
-			scalePara = new BufferedReader(new InputStreamReader(scaleParaFile));
+			if(isPressureExit == true){
+				InputStream scaleParaFile = context.getResources().openRawResource(R.raw.scale_wifi_pressure);
+				scalePara = new BufferedReader(new InputStreamReader(scaleParaFile));
+			} else {
+				InputStream scaleParaFile = context.getResources().openRawResource(R.raw.scale_para);
+				scalePara = new BufferedReader(new InputStreamReader(scaleParaFile));
+			}
 			fp_restore = scalePara;
 		}
 
@@ -371,9 +380,9 @@ class svm_scale
 		return scale_result;
 	}
 
-	public static String main(String argv[], String data, Context context) throws IOException
+	public static String main(String argv[], String data, boolean isPressureExit, Context context) throws IOException
 	{
 		svm_scale s = new svm_scale(context);
-		return s.run(argv,data);
+		return s.run(argv,data,isPressureExit);
 	}
 }
