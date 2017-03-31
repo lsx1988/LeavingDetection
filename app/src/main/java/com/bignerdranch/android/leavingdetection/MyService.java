@@ -23,6 +23,7 @@ public class MyService extends Service implements SensorEventListener {
     private WifiManager wifiManager = null;
     private SensorManager mSensorManager = null;
     private static final String TAG = "MyService";
+
     private Handler handler;
     private HandlerThread handlerThread;
     private long lastTimeStamp;
@@ -30,8 +31,10 @@ public class MyService extends Service implements SensorEventListener {
     private boolean usePressure;
 
 
+
     @Override
     public IBinder onBind(Intent intent) {
+
         return null;
     }
 
@@ -63,7 +66,6 @@ public class MyService extends Service implements SensorEventListener {
         mSensorManager.unregisterListener(this);
         Log.d(TAG, "onDestroy executed");
     }
-
 
     @Override
     public void onSensorChanged(SensorEvent event) {

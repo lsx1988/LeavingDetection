@@ -56,8 +56,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-    }
-
+      
     @OnClick(R.id.start_detection) void start() {
 
         mTextView.setVisibility(View.INVISIBLE);
