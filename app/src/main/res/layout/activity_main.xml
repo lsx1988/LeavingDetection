@@ -15,7 +15,6 @@
             android:layout_height="wrap_content"
             android:text="@string/start_detection"
             android:textSize="20sp"
-            android:onClick="clickBtn"
             android:layout_weight="1"/>
         <Button
             android:id="@+id/stop_detection"
@@ -23,7 +22,6 @@
             android:layout_height="wrap_content"
             android:text="@string/stop_detection"
             android:textSize="20sp"
-            android:onClick="clickBtn"
             android:layout_weight="1"/>
     </LinearLayout>
 
@@ -31,6 +29,13 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
+        <CheckBox
+            android:id="@+id/use_pressure"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:hint="Use Pressure"
+            android:layout_marginLeft="150dp"/>
 
         <ProgressBar
             android:id="@+id/progressBar"
@@ -46,6 +51,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:hint="@string/wifi_level"
+                android:layout_gravity="center"
+                android:textSize="25sp"/>
+            <TextView
+                android:id="@+id/pressure_level"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="Pressure Level"
                 android:layout_gravity="center"
                 android:textSize="25sp"/>
             <TextView

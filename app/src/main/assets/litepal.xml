@@ -33,6 +33,8 @@
     -->
     <list>
         <mapping class="com.bignerdranch.android.leavingdetection.WifiData"></mapping>
+        <mapping class="com.bignerdranch.android.leavingdetection.PressureData"></mapping>
+
     </list>
 
     <!--

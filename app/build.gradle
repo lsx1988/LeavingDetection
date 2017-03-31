@@ -30,4 +30,7 @@ dependencies {
     compile files('libs/libsvm.jar')
     compile 'org.litepal.android:core:1.5.0'
     compile 'com.idescout.sql:sqlscout-server:2.0'
+    compile 'com.jakewharton:butterknife:8.5.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
+    compile 'org.greenrobot:eventbus:3.0.0'
 }

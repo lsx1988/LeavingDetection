@@ -1,94 +1,143 @@
 package com.bignerdranch.android.leavingdetection;
 
 import android.app.Service;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.idescout.sql.SqlScoutServer;
 
-import org.litepal.crud.DataSupport;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+import org.litepal.LitePal;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
 
-    private MyService.ScanWifi mScanWifi;
-    private TextView mTextView = null;
-    private TextView mPossibility = null;
-    private ProgressBar mProgressBar = null;
+    private static final String TAG = "MainActivity";
+
     private Vibrator vibrator;
+    private Intent serviceIntent;
+    private double wifiLevel;
+    private double possibility;
+    private double predict;
+    private double pressure;
+    private boolean  stayInside= false, stayOutside= false;
+
+    @BindView(R.id.wifi_level) TextView mTextView;
+    @BindView(R.id.progressBar) ProgressBar mProgressBar;
+    @BindView(R.id.possibility) TextView mPossibility;
+    @BindView(R.id.pressure_level) TextView mPressure;
+    @BindView(R.id.use_pressure) CheckBox usePressure;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        SqlScoutServer.create(this, getPackageName());
         super.onCreate(savedInstanceState);
+        LitePal.initialize(this);
+        SqlScoutServer.create(this, getPackageName());
         setContentView(R.layout.activity_main);
-        vibrator=(Vibrator)getSystemService(Service.VIBRATOR_SERVICE);
-        mTextView = (TextView) findViewById(R.id.wifi_level);
-        mTextView.setVisibility(View.VISIBLE);
-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
-        mPossibility = (TextView) findViewById(R.id.possibility);
+        ButterKnife.bind(this);
+        vibrator = (Vibrator) getSystemService(Service.VIBRATOR_SERVICE);
+        mTextView.setVisibility(View.INVISIBLE);
+        mPossibility.setVisibility(View.INVISIBLE);
+        mPressure.setVisibility(View.INVISIBLE);
+        usePressure.setVisibility(View.VISIBLE);
     }
 
-    public void clickBtn(View view) {
+    @Override
+    protected void onStart() {
+        super.onStart();
+      
+    @OnClick(R.id.start_detection) void start() {
 
-        switch (view.getId()) {
-            case R.id.start_detection:
-                Intent bindIntent = new Intent(this, MyService.class);
-                bindService(bindIntent, mServiceConnection, BIND_AUTO_CREATE);
-                mTextView.setVisibility(View.INVISIBLE);
-                mPossibility.setVisibility(View.INVISIBLE);
-                mProgressBar.setVisibility(View.VISIBLE);
-                break;
-            case R.id.stop_detection:
-                unbindService(mServiceConnection);
-                DataSupport.deleteAll(WifiData.class);
-                mTextView.setText(R.string.stop_run);
-        }
+        mTextView.setVisibility(View.INVISIBLE);
+        mPossibility.setVisibility(View.INVISIBLE);
+        usePressure.setVisibility(View.INVISIBLE);
+        mPressure.setVisibility(View.INVISIBLE);
+
+        mProgressBar.setVisibility(View.VISIBLE);
+
+        EventBus.getDefault().register(this);
+        serviceIntent = new Intent(this, MyService.class);
+        serviceIntent.putExtra("usePressure", usePressure.isChecked());
+        this.startService(serviceIntent);
     }
 
-    private ServiceConnection mServiceConnection= new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            mScanWifi = (MyService.ScanWifi) iBinder;
-            mScanWifi.startScanning(mHandler);
-        }
+    @OnClick(R.id.stop_detection) void stop() {
+        EventBus.getDefault().unregister(this);
+        stopService(serviceIntent);
+        mTextView.setVisibility(View.INVISIBLE);
+        mPossibility.setVisibility(View.INVISIBLE);
+        mPressure.setVisibility(View.INVISIBLE);
+        usePressure.setVisibility(View.VISIBLE);
+    }
 
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(MessageEvent event) {
+        updateUI(event, mTextView, mPossibility);
+    }
 
-        }
-    };
-
-    private Handler mHandler = new Handler() {
-        public void handleMessage(Message msg) {
-
-            mTextView.setVisibility(View.VISIBLE);
-            mPossibility.setVisibility(View.VISIBLE);
-            mProgressBar.setVisibility(View.INVISIBLE);
-
-            double possibility = msg.getData().getDouble("Possibility")*100;
-
-            mTextView.setText(String.valueOf(msg.getData().getDouble("wifiLevel")));
-            mPossibility.setText(String.format("%.2f", possibility) + "%");
-
-            if (msg.getData().getBoolean("alarm") == true){
-                vibrator.vibrate(2000);
-            }
-        }
-    };
+    @Override
+    protected void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
+    }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unbindService(mServiceConnection);
+    }
+
+    private void updateUI(MessageEvent event, TextView mTextView, TextView mPossibility) {
+
+        mTextView.setVisibility(View.VISIBLE);
+        mPossibility.setVisibility(View.VISIBLE);
+
+        if(usePressure.isChecked() == true) {
+            mPressure.setVisibility(View.VISIBLE);
+        }
+
+        mProgressBar.setVisibility(View.INVISIBLE);
+
+        wifiLevel = event.getWifiLevel();
+        possibility = event.getPossibility();
+        predict = event.getPredict();
+        pressure = event.getPressure();
+
+        mTextView.setText(String.valueOf(wifiLevel));
+        mPossibility.setText(String.format("%.2f", possibility * 100) + "%");
+        mPressure.setText(String.format("%.2f", pressure) + "Pa");
+
+        if (predict == 1.0) {
+
+            if (possibility >= 0.95) {
+                stayOutside = true;
+            }
+
+            if (stayOutside == true && stayInside == true) {
+                vibrator.vibrate(2000);
+                stayInside = false;
+            }
+
+        }else if (predict != 1.0) {
+
+            if (possibility <= 0.1) {
+                stayInside = true;
+            }
+
+            if (stayInside == true && stayOutside == true) {
+                vibrator.vibrate(2000);
+                stayOutside = false;
+            }
+        }
     }
 }
