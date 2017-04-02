@@ -35,7 +35,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:hint="Use Pressure"
-            android:layout_marginLeft="150dp"/>
+            android:layout_marginLeft="150dp"
+            android:visibility="invisible"/>
 
         <ProgressBar
             android:id="@+id/progressBar"
@@ -52,23 +53,33 @@
                 android:layout_height="wrap_content"
                 android:hint="@string/wifi_level"
                 android:layout_gravity="center"
-                android:textSize="25sp"/>
+                android:textSize="25sp"
+                android:visibility="invisible"/>
             <TextView
                 android:id="@+id/pressure_level"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:hint="Pressure Level"
                 android:layout_gravity="center"
-                android:textSize="25sp"/>
+                android:textSize="25sp"
+                android:visibility="invisible"/>
             <TextView
                 android:id="@+id/possibility"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:hint="Possibility"
                 android:layout_gravity="center"
-                android:textSize="25sp"/>
+                android:textSize="25sp"
+                android:visibility="invisible"/>
         </LinearLayout>
-
-
     </FrameLayout>
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="36dp"
+        android:gravity="center"
+        tools:text="Here shows the status"
+        />
 </LinearLayout>

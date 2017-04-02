@@ -136,5 +136,4 @@ public class LimitQueue<E> implements Queue<E> {
     public <T> T[] toArray(T[] a) {
         return queue.toArray(a);
     }
-
 }
