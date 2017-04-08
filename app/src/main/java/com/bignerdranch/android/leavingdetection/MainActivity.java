@@ -10,11 +10,14 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
 import com.idescout.sql.SqlScoutServer;
+
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -65,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
         showProgressBar();
         serviceIntent = new Intent(this, MyService.class);
         serviceIntent.putExtra("usePressure", isPressureOnCheckBox.isChecked());
+        mStatusTextView.setText("Initializing");
         this.startService(serviceIntent);
     }
 
@@ -76,6 +80,8 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.stop_detection) void stop() {
         stopService(serviceIntent);
         showPressureSelection();
+        mStatusTextView.setText("");
+        mStatusTextView.setBackgroundColor(ContextCompat.getColor(this, R.color.notWalking));
     }
 
     /**
