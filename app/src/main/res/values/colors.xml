@@ -4,4 +4,6 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
     <color name="indicator_color">#F00</color>
+    <color name="isWalking">#6dc066</color>
+    <color name="notWalking">#FFF</color>
 </resources>

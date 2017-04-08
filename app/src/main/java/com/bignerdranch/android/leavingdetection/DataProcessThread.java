@@ -65,6 +65,7 @@ public class DataProcessThread implements Runnable {
                         + " 4:" + getStd("stdOfAllWifiLevel")
                         + " 5:" + (getSumVar("homeWifiLevel"))
                         + " 6:" + (getSumVar("meanOfAllWifiLevel"));
+                Log.d(TAG, str);
             } else {
                 str = 0 + " 1:" + getMean("pressure", PressureData.class)
                         + " 2:" + getMax("pressure")
@@ -102,10 +103,15 @@ public class DataProcessThread implements Runnable {
                 String scale_result = svm_scale.main(blank_scale, str, isPressureExit, mContext);
                 Log.d(TAG, scale_result);
                 result = predict.main(blank, scale_result, model);
+
                 if (isPressureExit == true) {
                     EventBus.getDefault().post(new MessageEvent(getMean("homeWifiLevel", WifiData.class), result[1], result[0], getMean("pressure", PressureData.class)));
                 } else {
                     EventBus.getDefault().post(new MessageEvent(getMean("homeWifiLevel", WifiData.class), result[1], result[0], -1));
+                }
+
+                if (result[1] >= 0.95 || result[1] <= 0.1) {
+                    EventBus.getDefault().post(new MessageIfAlarm(true));
                 }
             } catch (IOException e) {
                 Log.d(TAG, "onCreate: ");

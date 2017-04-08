@@ -3,6 +3,9 @@
 buildscript {
     repositories {
         jcenter()
+        maven {
+            url "http://mvn.leancloud.cn/nexus/content/repositories/public"
+        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.0'
@@ -17,6 +20,12 @@ allprojects {
         jcenter()
         maven {
             url 'http://www.idescout.com/maven/repo/'
+        }
+
+        maven { url "https://jitpack.io" }
+
+        maven {
+            url "http://mvn.leancloud.cn/nexus/content/repositories/public"
         }
     }
 }

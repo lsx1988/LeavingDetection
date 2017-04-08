@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.CheckBox;
@@ -33,11 +34,12 @@ public class MainActivity extends AppCompatActivity {
     private double pressure;
     private boolean  stayInside= false, stayOutside= false;
 
-    @BindView(R.id.wifi_level) TextView mTextView;
+    @BindView(R.id.wifi_level) TextView mWifiLevelTextView;
     @BindView(R.id.progressBar) ProgressBar mProgressBar;
-    @BindView(R.id.possibility) TextView mPossibility;
-    @BindView(R.id.pressure_level) TextView mPressure;
-    @BindView(R.id.use_pressure) CheckBox usePressure;
+    @BindView(R.id.possibility) TextView mPossibilityTextView;
+    @BindView(R.id.pressure_level) TextView mPressureTextView;
+    @BindView(R.id.use_pressure) CheckBox isPressureOnCheckBox;
+    @BindView(R.id.status) TextView mStatusTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,44 +49,44 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         vibrator = (Vibrator) getSystemService(Service.VIBRATOR_SERVICE);
-        mTextView.setVisibility(View.INVISIBLE);
-        mPossibility.setVisibility(View.INVISIBLE);
-        mPressure.setVisibility(View.INVISIBLE);
-        usePressure.setVisibility(View.VISIBLE);
+        showPressureSelection();
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-      
-    @OnClick(R.id.start_detection) void start() {
-
-        mTextView.setVisibility(View.INVISIBLE);
-        mPossibility.setVisibility(View.INVISIBLE);
-        usePressure.setVisibility(View.INVISIBLE);
-        mPressure.setVisibility(View.INVISIBLE);
-
-        mProgressBar.setVisibility(View.VISIBLE);
-
+    protected void onResume() {
+        super.onResume();
         EventBus.getDefault().register(this);
+    }
+
+    /**
+     *  press the start button, the app will show the progress bar to indicate the data collecting
+     *  phase. Create the intent and start the service. If the service is already in operation, the
+     *  activity will not activate the service again.
+     */
+
+    @OnClick(R.id.start_detection) void start() {
+        showProgressBar();
         serviceIntent = new Intent(this, MyService.class);
-        serviceIntent.putExtra("usePressure", usePressure.isChecked());
+        serviceIntent.putExtra("usePressure", isPressureOnCheckBox.isChecked());
+        mStatusTextView.setText("Initializing");
         this.startService(serviceIntent);
     }
 
+    /**
+     * when press the stop button, unregister the eventbus, stop the service and showup the pressure
+     * selection. And only when stop button is clicked, the service will be stopped.
+     */
+
     @OnClick(R.id.stop_detection) void stop() {
-        EventBus.getDefault().unregister(this);
         stopService(serviceIntent);
-        mTextView.setVisibility(View.INVISIBLE);
-        mPossibility.setVisibility(View.INVISIBLE);
-        mPressure.setVisibility(View.INVISIBLE);
-        usePressure.setVisibility(View.VISIBLE);
+        showPressureSelection();
+        mStatusTextView.setText("");
+        mStatusTextView.setBackgroundColor(ContextCompat.getColor(this, R.color.notWalking));
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMessageEvent(MessageEvent event) {
-        updateUI(event, mTextView, mPossibility);
-    }
+    /**
+     * when the activity is not visible to user, unregister the eventbus.
+     */
 
     @Override
     protected void onStop() {
@@ -92,30 +94,44 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    /**
+     * when receive the message, update the UI view.
+     * @param event is the messageEvent send from background thread
+     */
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(MessageEvent event) {
+        updateUI(event, mWifiLevelTextView, mPossibilityTextView);
     }
 
-    private void updateUI(MessageEvent event, TextView mTextView, TextView mPossibility) {
-
-        mTextView.setVisibility(View.VISIBLE);
-        mPossibility.setVisibility(View.VISIBLE);
-
-        if(usePressure.isChecked() == true) {
-            mPressure.setVisibility(View.VISIBLE);
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageStatus(MessageStatus event) {
+        boolean status = event.isWalking();
+        if (status == true) {
+            mStatusTextView.setBackgroundColor(ContextCompat.getColor(this, R.color.isWalking));
+            mStatusTextView.setText("You are walking");
+        } else {
+            mStatusTextView.setBackgroundColor(ContextCompat.getColor(this, R.color.notWalking));
+            mStatusTextView.setText("Not walking");
         }
+    }
 
-        mProgressBar.setVisibility(View.INVISIBLE);
+    private void updateUI(MessageEvent event, TextView mWifiLevelTextView, TextView mPossibilityTextView) {
+
+        if(isPressureOnCheckBox.isChecked() == true) {
+            showWifiAndPressureData();
+        } else {
+            showWifiData();
+        }
 
         wifiLevel = event.getWifiLevel();
         possibility = event.getPossibility();
         predict = event.getPredict();
         pressure = event.getPressure();
 
-        mTextView.setText(String.valueOf(wifiLevel));
-        mPossibility.setText(String.format("%.2f", possibility * 100) + "%");
-        mPressure.setText(String.format("%.2f", pressure) + "Pa");
+        mWifiLevelTextView.setText(String.valueOf(wifiLevel));
+        mPossibilityTextView.setText(String.format("%.2f", possibility * 100) + "%");
+        mPressureTextView.setText(String.format("%.2f", pressure) + "Pa");
 
         if (predict == 1.0) {
 
@@ -139,5 +155,31 @@ public class MainActivity extends AppCompatActivity {
                 stayOutside = false;
             }
         }
+    }
+
+    private void showPressureSelection() {
+        mProgressBar.setVisibility(View.GONE);
+        mWifiLevelTextView.setVisibility(View.GONE);
+        mPressureTextView.setVisibility(View.GONE);
+        mPossibilityTextView.setVisibility(View.GONE);
+        isPressureOnCheckBox.setVisibility(View.VISIBLE);
+    }
+
+    private void showProgressBar() {
+        isPressureOnCheckBox.setVisibility(View.GONE);
+        mProgressBar.setVisibility(View.VISIBLE);
+    }
+
+    private void showWifiData() {
+        mProgressBar.setVisibility(View.GONE);
+        mWifiLevelTextView.setVisibility(View.VISIBLE);
+        mPossibilityTextView.setVisibility(View.VISIBLE);
+    }
+
+    private void showWifiAndPressureData() {
+        mProgressBar.setVisibility(View.GONE);
+        mWifiLevelTextView.setVisibility(View.VISIBLE);
+        mPressureTextView.setVisibility(View.VISIBLE);
+        mPossibilityTextView.setVisibility(View.VISIBLE);
     }
 }
